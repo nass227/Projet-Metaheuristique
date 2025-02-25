@@ -1,4 +1,5 @@
 import numpy as np
+from file import SetCoveringProblem  # Import from your file structure
 
 class DFSSolver:
     def __init__(self, subsets, universe_size, k):
@@ -17,7 +18,7 @@ class DFSSolver:
         coverage = len(covered)
         print(f"Evaluating solution: {selected} -> Coverage: {coverage}")
         return coverage
-    
+
     def dfs(self, index=0, selected=None, count=0):
         """Depth-First Search with backtracking."""
         if selected is None:
@@ -27,13 +28,13 @@ class DFSSolver:
         
         # Stop if we have considered all subsets (leaf node)
         if index >= len(self.subsets):
-            print("reached a feuille")
+            # print(f"Leaf node reached {index}")
             if count == self.k:
                 coverage = self.evaluate_solution(selected)
                 if coverage > self.best_coverage:
                     self.best_coverage = coverage
                     self.best_solution = selected[:]
-                    print(f"\n\nNew best solution found! Coverage: {self.best_coverage}\n\n")
+                    print(f"New best solution found! Coverage: {self.best_coverage}")
             return
         
         # Explore without taking the current subset
@@ -41,9 +42,37 @@ class DFSSolver:
         
         # Explore taking the current subset
         selected[index] = 1
-        print(f"Taking subset {index}")
+        # print(f"Taking subset {index}")
         self.dfs(index + 1, selected, count + 1)
         selected[index] = 0  # Backtrack
+        # print(f"Backtracking from subset {index}")
+   
+    def dfs_version_2(self, index=0, selected=None, count=0):
+        """Depth-First Search with backtracking, starting empty and adding subsets first."""
+        if selected is None:
+            selected = [1] * len(self.subsets)  # Start with no subsets selected
+        
+        print(f"DFS call -> index: {index}, selected: {selected}, count: {count}")
+        
+        # Stop if we have considered all subsets (leaf node)
+        if index >= len(self.subsets):
+            if count == self.k:
+                coverage = self.evaluate_solution(selected)
+                if coverage > self.best_coverage:
+                    self.best_coverage = coverage
+                    self.best_solution = selected[:]
+                    print(f"New best solution found! Coverage: {self.best_coverage}")
+            return
+        
+        # Explore by adding the current subset first
+        print(f"Adding subset {len(self.subsets)-index}")
+        self.dfs(index + 1, selected, count + 1)
+        
+        # Explore without adding the current subset
+        selected[len(self.subsets)-index] = 0
+        print(f"Skipping subset {index}")
+        self.dfs(index + 1, selected, count)
+        
         print(f"Backtracking from subset {index}")
     
     def solve(self):
@@ -54,7 +83,6 @@ class DFSSolver:
 
 # Example usage
 if __name__ == "__main__":
-    from file import SetCoveringProblem  # Import from your file structure
     
     file_name = "./scp47.txt"
     scp = SetCoveringProblem(file_name)
