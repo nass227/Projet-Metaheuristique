@@ -1,4 +1,5 @@
 import numpy as np
+import time
 from file import SetCoveringProblem  # Import from your file structure
 
 class DFSSolver:
@@ -8,6 +9,9 @@ class DFSSolver:
         self.k = k
         self.best_solution = None
         self.best_coverage = 0  # Track the maximum coverage
+        self.total_explored = 0  # Count total solutions explored
+        self.valid_solutions = 0  # Count valid solutions found
+        self.start_time = None  # Track execution time
     
     def evaluate_solution(self, selected):
         """Evaluate the coverage of the selected subsets."""
@@ -16,75 +20,96 @@ class DFSSolver:
             if chosen:
                 covered.update(self.subsets[i])
         coverage = len(covered)
-        print(f"Evaluating solution: {selected} -> Coverage: {coverage}")
         return coverage
-
-    def dfs(self, index=0, selected=None, count=0):
-        """Depth-First Search with backtracking."""
+    
+    def dfs(self, index=0, selected=None, count=0, start_time=None, time_limit=10800):
+        """Depth-First Search with backtracking, evaluating solutions as soon as they reach k subsets."""
         if selected is None:
-            selected = [0] * len(self.subsets)
+            selected = [0] * len(self.subsets)  # Start with no subsets selected
+            start_time = time.time()
         
-        # print(f"DFS call -> index: {index}, selected: {selected}, count: {count}")
-        
-        # Stop if we have considered all subsets (leaf node)
-        if index >= len(self.subsets):
-            # print(f"Leaf node reached {index}")
-            if count == self.k:
-                coverage = self.evaluate_solution(selected)
-                if coverage > self.best_coverage:
-                    self.best_coverage = coverage
-                    self.best_solution = selected[:]
-                    print(f"New best solution found! Coverage: {self.best_coverage}")
+        # Stop if time limit is exceeded
+        if time.time() - start_time > time_limit:
+            print("Time limit reached. Stopping search.")
             return
         
-        # Explore without taking the current subset
-        self.dfs(index + 1, selected, count)
+        self.total_explored += 1
         
-        # Explore taking the current subset
-        selected[index] = 1
-        # print(f"Taking subset {index}")
-        self.dfs(index + 1, selected, count + 1)
-        selected[index] = 0  # Backtrack
-        # print(f"Backtracking from subset {index}")
-   
-    def dfs_version_2(self, index=0, selected=None, count=0):
-        """Depth-First Search with backtracking, starting empty and adding subsets first."""
-        if selected is None:
-            selected = [1] * len(self.subsets)  # Start with no subsets selected
+        # Evaluate as soon as we reach k selected subsets
+        if count == self.k:
+            self.valid_solutions += 1
+            coverage = self.evaluate_solution(selected)
+            print(f"Valid solution found (Coverage: {coverage})")
+            if coverage > self.best_coverage:
+                self.best_coverage = coverage
+                self.best_solution = selected[:]
+            return
         
-        print(f"DFS call -> index: {index}, selected: {selected}, count: {count}")
-        
-        # Stop if we have considered all subsets (leaf node)
+        # Stop if we have considered all subsets
         if index >= len(self.subsets):
-            if count == self.k:
-                coverage = self.evaluate_solution(selected)
-                if coverage > self.best_coverage:
-                    self.best_coverage = coverage
-                    self.best_solution = selected[:]
-                    print(f"New best solution found! Coverage: {self.best_coverage}")
             return
         
         # Explore by adding the current subset first
-        print(f"Adding subset {len(self.subsets)-index}")
-        self.dfs(index + 1, selected, count + 1)
+        selected[index] = 1
+        self.dfs(index + 1, selected, count + 1, start_time, time_limit)
         
         # Explore without adding the current subset
-        selected[len(self.subsets)-index] = 0
-        print(f"Skipping subset {index}")
-        self.dfs(index + 1, selected, count)
+        selected[index] = 0
+        self.dfs(index + 1, selected, count, start_time, time_limit)
+
+    def dfs_version2(self, index=None, selected=None, count=None, start_time=None, time_limit=10800):
+        """Depth-First Search starting with all subsets selected and removing subsets from the right."""
+        if selected is None:
+            selected = [1] * len(self.subsets)  # Start with all subsets selected
+            count = len(self.subsets)  # Start with full selection
+            start_time = time.time()
+            index = len(self.subsets) - 1  # Start from the last index
         
-        print(f"Backtracking from subset {index}")
-    
-    def solve(self):
+        # Stop if time limit is exceeded
+        if time.time() - start_time > time_limit:
+            # print("Time limit reached. Stopping search.")
+            return
+        
+        self.total_explored += 1
+        
+        # Evaluate as soon as we reach k selected subsets
+        if count == self.k:
+            self.valid_solutions += 1
+            coverage = self.evaluate_solution(selected)
+            print(f"Valid solution found (Coverage: {coverage})")
+            if coverage > self.best_coverage:
+                self.best_coverage = coverage
+                self.best_solution = selected[:]
+            return
+        
+        # Stop if we have removed all subsets
+        if index < 0:  # Now we terminate when reaching the leftmost side
+            return
+        
+        # Explore by removing the current subset
+        selected[index] = 0
+        self.dfs_version2(index - 1, selected, count - 1, start_time, time_limit)
+        
+        # Explore without removing the current subset
+        selected[index] = 1  # Restore selection before backtracking
+        self.dfs_version2(index - 1, selected, count, start_time, time_limit)
+
+    def solve(self, time_limit=10800):
         print("Starting DFS Solver...")
-        self.dfs()
+        start_time = time.time()
+        self.dfs_version2(start_time=start_time, time_limit=time_limit)
+        execution_time = time.time() - start_time
+        print(f"DFS Completed in {execution_time / 3600:.2f} hours")
+        print(f"Total solutions explored: {self.total_explored}")
+        print(f"Valid solutions found: {self.valid_solutions}")
         print(f"Best solution found: {self.best_solution} with coverage: {self.best_coverage}")
         return self.best_solution, self.best_coverage
 
 # Example usage
 if __name__ == "__main__":
+    # from file import SetCoveringProblem  # Import from your file structure
     
-    file_name = "./scp47.txt"
+    file_name = "/content/scp47.txt"
     scp = SetCoveringProblem(file_name)
     scp.lire_fichier()
     scp.creer_matrice_binaire()
@@ -94,7 +119,7 @@ if __name__ == "__main__":
     k = int((2/3) * len(subsets))  # Use the same k as in final.py
     
     solver = DFSSolver(subsets, universe_size, k)
-    best_solution, best_coverage = solver.solve()
+    best_solution, best_coverage = solver.solve(time_limit=10800)  # 3-hour limit
     
     print("Best solution:", best_solution)
     print("Best coverage:", best_coverage)
