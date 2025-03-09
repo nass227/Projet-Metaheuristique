@@ -125,6 +125,15 @@ class GeneticAlgorithm:
 
     # Croisement à un point
     @staticmethod
+    def one_point_crossover(parent1, parent2):
+        # choisir de faire un croisement ou pas aleatoirement
+        
+            point = random.randint(1, len(parent1) - 1) #choisir un point de croisement aleatoirement
+            child1 = np.concatenate((parent1[:point], parent2[point:]))
+            child2 = np.concatenate((parent2[:point], parent1[point:]))
+            return child1, child2
+    #croisement a 2 points
+    @staticmethod
     def two_point_crossover(parent1, parent2):
         # Choisir deux points de croisement aléatoires
         point1 = random.randint(1, len(parent1) - 2)
