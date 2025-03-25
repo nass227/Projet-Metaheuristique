@@ -23,7 +23,11 @@ L'algorithme génétique suit les étapes suivantes :
 6. **Remplacement** : Intégration des nouveaux individus dans la population.  
 7. **Critère d'arrêt** : Nombre maximal d'itérations ou convergence des solutions.  
 
-## 2. Membres du projet
+## 3. Benchmark utilisé
+( la lecture de fichier depends de ces benchmark ).
+https://people.brunel.ac.uk/~mastjjb/jeb/orlib/scpinfo.html
+
+## 4. Membres du projet
 
 - ABDELLAZIZ Nassila
 - AKMOUNE Feriel
